@@ -52,11 +52,10 @@ jobs:
 
       - name: Set Docker Tags
         run: |
-          SANITIZED_REF=$(echo "$GIT_REF" | sed 's/\//-/g')
           if [ "${{ github.ref_name }}" = "master" ]; then
             echo "DOCKER_TAG=${DOCKER_REPO}:latest-ce" >> $GITHUB_ENV
           else
-            echo "DOCKER_TAG=${DOCKER_REPO}:${SANITIZED_REF}-ce" >> $GITHUB_ENV
+            echo "DOCKER_TAG=${DOCKER_REPO}:${{ github.ref_name }}-ce" >> $GITHUB_ENV
           fi
 
       - name: Set up QEMU
@@ -122,11 +121,10 @@ jobs:
         env:
           GIT_REF: ${{ github.head_ref || github.ref_name }}
         run: |
-          SANITIZED_REF=$(echo "$GIT_REF" | sed 's/\//-/g')
           if [ "${{ github.ref_name }}" = "master" ]; then
             TAG="${DOCKER_REPO}:latest-ce"
           else
-            TAG="${DOCKER_REPO}:${SANITIZED_REF}-ce"
+            TAG="${DOCKER_REPO}:${{ github.ref_name }}-ce"
           fi
           
           docker buildx imagetools create -t $TAG \
@@ -136,11 +134,10 @@ jobs:
         env:
           GIT_REF: ${{ github.head_ref || github.ref_name }}
         run: |
-          SANITIZED_REF=$(echo "$GIT_REF" | sed 's/\//-/g')
           if [ "${{ github.ref_name }}" = "master" ]; then
             TAG="${DOCKER_REPO}:latest-ce"
           else
-            TAG="${DOCKER_REPO}:${SANITIZED_REF}-ce"
+            TAG="${DOCKER_REPO}:${{ github.ref_name }}-ce"
           fi
           
           docker buildx imagetools inspect $TAG
@@ -160,7 +157,7 @@ jobs:
             docker rm chatwoot-container || true
             
             docker rmi ${{ env.DOCKER_REPO }}:latest-ce || true
-            docker rmi ${{ env.DOCKER_REPO }}:${{ github.sha }}-ce || true
+            docker rmi ${{ env.DOCKER_REPO }}:${{ github.ref_name }}-ce || true
             
-            docker pull ${{ env.DOCKER_REPO }}:latest-ce
-            docker run -d --name chatwoot-container -p 3500:3000 ${{ env.DOCKER_REPO }}:latest-ce
+            docker pull ${{ env.DOCKER_REPO }}:${{ github.ref_name }}-ce
+            docker run -d --name chatwoot-container -p 3500:3000 ${{ env.DOCKER_REPO }}:${{ github.ref_name }}-ce
