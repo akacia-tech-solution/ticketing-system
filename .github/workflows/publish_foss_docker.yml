@@ -19,6 +19,7 @@ env:
   DOCKER_REPO: adrianachaves/chatwoot
 
 jobs:
+
   build:
     strategy:
       fail-fast: false
@@ -143,3 +144,23 @@ jobs:
           fi
           
           docker buildx imagetools inspect $TAG
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: merge
+    steps:
+      - name: Deploy to Contabo Server
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.CONTABO_HOST }}
+          username: ${{ secrets.CONTABO_USER }}
+          password: ${{ secrets.CONTABO_PASSWORD }}
+          script: |
+            docker stop chatwoot-container || true
+            docker rm chatwoot-container || true
+            
+            docker rmi ${{ env.DOCKER_REPO }}:latest-ce || true
+            docker rmi ${{ env.DOCKER_REPO }}:${{ github.sha }}-ce || true
+            
+            docker pull ${{ env.DOCKER_REPO }}:latest-ce
+            docker run -d --name chatwoot-container -p 3500:3000 ${{ env.DOCKER_REPO }}:latest-ce
